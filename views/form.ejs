@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="/public/edit/themes/default/default.css" />
+    <link rel="stylesheet" href="/public/layui/css/layui.css">
+    <link rel="stylesheet" href="/public/css/form.css">
+    <script charset="utf-8" src="/public/edit/kindeditor-min.js"></script>
+    <script charset="utf-8" src="/public/edit/lang/zh_CN.js"></script>
+
+</head>
+<body>
+<div class="asside">
+    <h3>标题</h3>
+    <ul id="demo"></ul>
+    <p style="margin-top: 30px">
+        <label for="">1级标题</label>
+        <input type="text" id="title1">
+    </p>
+    <p>
+        <button id="addTitle1">新增</button>
+    </p>
+    <p>
+        <label for="">2级标题</label>
+        <input type="text" id="title2">
+    </p>
+    <p>
+        <button id="addTitle2">新增</button>
+    </p>
+</div>
+<div class="content">
+    <h3>文本内容</h3>
+
+    <form>
+        <textarea name="content" style="width:800px;height:400px;visibility:hidden;"></textarea>
+        <p style="width:800px">
+            <button type="button" id="submit">提交</button>
+        </p>
+    </form>
+</div>
+<div style="clear: both"></div>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/public/layer/layer.js"></script>
+<script src="/public/layui/layui.js"></script>
+<script>
+    layui.use('tree', function(){
+        $.ajax({
+            url:'/static/data.txt',
+            type:'get',
+            dataType:'text',
+            success:function(data){
+                var list=JSON.parse(data);
+                //console.log(list)
+                layui.tree({
+                    elem: '#demo' //传入元素选择器
+                    ,nodes:list
+                });
+            }
+        })
+    });
+
+    $('#addTitle1').click(function(){
+        var name=$("#title1").val();
+        $.ajax({
+            url:'/addTitle1',
+            type:'post',
+            data:{
+                'name':name
+            },
+            dataType:'json',
+            success:function(data){
+                if(data.code==200){
+                    location.reload();
+                }
+            }
+        })
+    })
+    $('#addTitle2').click(function(){
+        var pNum=$('cite.select').attr('num');
+        //console.log(pNum)
+        if(!pNum || pNum.indexOf('-')>-1){
+            layer.msg("请选择1级标题");
+            return;
+        }
+        var name=$("#title2").val();
+        $.ajax({
+            url:'/addTitle2',
+            type:'post',
+            data:{
+                'pNum':pNum,
+                'name':name
+            },
+            dataType:'json',
+            success:function(data){
+                //console.log(data)
+                if(data.code==200){
+                    location.reload();
+                }
+            }
+        })
+    })
+    var editor;
+    KindEditor.ready(function(K) {
+        editor = K.create('textarea[name="content"]', {
+            allowFileManager : true
+        });
+        K('#submit').click(function(e) {
+           // alert(editor.html());
+            var citeNum=$('cite.select').attr('num');
+            if(!citeNum){
+                layer.msg("请选择标题");
+                return;
+            }
+            $.ajax({
+                url:'/addContent',
+                type:'post',
+                data:{
+                    'citeNum':citeNum,
+                    'content':editor.html()
+                },
+                dataType:'json',
+                success:function(data){
+                    //console.log(data)
+                    if(data.code==200){
+                        layer.msg(data.msg,{icon:1})
+                    }
+                }
+            })
+        });
+        $(document).on('click','cite',function(){
+            $('cite').removeClass('select');
+            $(this).addClass('select');
+            var num=$(this).attr('num');
+            $.ajax({
+                url:'/static/data.txt',
+                type:'get',
+                dataType:'text',
+                success:function(data){
+                    var list=JSON.parse(data);
+                    if(num.indexOf('-')>-1){
+                        var numArr=num.split('-');
+                        var children=list[numArr[0]-1].children;
+                        if(children[numArr[1]-1].content){
+                            editor.html(children[numArr[1]-1].content);
+                        }else{
+                            editor.html('');
+                        }
+
+                    }else{
+                        if(list[num-1].content){
+                            editor.html(list[num-1].content);
+                        }else{
+                            editor.html('');
+                        }
+
+                    }
+                }
+            })
+        });
+    });
+</script>
+</body>
+</html>
