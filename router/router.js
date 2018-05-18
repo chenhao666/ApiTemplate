@@ -47,7 +47,7 @@ exports.addContent=function(req,res){
     var dataObj=req.body;
     //console.log(dataObj)
     fs.readFile(path.normalize(__dirname+'/../static/data.txt'),'utf-8',function(err,data){
-        var list=JSON.parse(data);
+        var list=JSON.parse(data.toString());
         if(dataObj.citeNum.indexOf('-')>-1){
             var dataArr=dataObj.citeNum.split('-');
             var childrenArr=list[dataArr[0]-1].children;
